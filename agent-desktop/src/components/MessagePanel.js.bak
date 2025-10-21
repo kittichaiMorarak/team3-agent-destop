@@ -145,11 +145,6 @@ function MessagePanel({ messages, agentCode, loading = false }) {
                     </span>
                   </div>
                 </div>
-                {!message.isRead && (
-                  <div style={{marginBottom:6}}>
-                    <span className="unread-badge">UNREAD</span>
-                  </div>
-                )}
                 
                 <div className="message-content">
                   {message.content}

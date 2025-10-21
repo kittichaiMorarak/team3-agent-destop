@@ -4,11 +4,11 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   Tooltip
 } from '@mui/material';
-import { Person, AccessTime, Message, Circle } from '@mui/icons-material';
+import { Person, AccessTime, Message, Circle, Whatshot, Schedule, WarningAmber } from '@mui/icons-material';
 import { getStatusColor, getStatusIcon } from '../utils/statusUtils';
 import { formatTimeAgo } from '../utils/dateFormat';
 
-function AgentCard({ agent, onSendMessage }) {
+function AgentCard({ agent, onSendMessage, onOpenDetail, indicators = [] }) {
   // State สำหรับ message dialog
   const [messageDialog, setMessageDialog] = useState(false);
   const [messageContent, setMessageContent] = useState('');
@@ -38,20 +38,41 @@ function AgentCard({ agent, onSendMessage }) {
       <Card 
         elevation={2}
         sx={{ 
-          border: `2px solid ${agent.isOnline ? statusColor : '#ccc'}`,
-          opacity: agent.isOnline ? 1 : 0.7,
-          transition: 'all 0.3s'
+          position: 'relative',
+          border: '1px solid #E5E7EB',
+          borderLeft: `4px solid ${agent.isOnline ? statusColor : '#9CA3AF'}`,
+          borderRadius: '12px',
+          width: 280,
+          height: 180,
+          overflow: 'hidden',
+          opacity: agent.isOnline ? 1 : 0.8,
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            transform: 'translateY(-4px)',
+            borderColor: '#3B82F6'
+          },
+          cursor: 'pointer'
         }}
+        onClick={() => onOpenDetail && onOpenDetail(agent)}
       >
-        <CardContent>
+        <CardContent sx={{ p: 2 }}>
+          {/* Indicators */}
+          {indicators.length > 0 && (
+            <Box sx={{ position: 'absolute', top: 8, right: 8, display: 'flex', gap: 0.5 }}>
+              {indicators.includes('long_call') && <Whatshot fontSize="small" color="error" />}
+              {indicators.includes('break_overtime') && <Schedule fontSize="small" color="primary" />}
+              {indicators.includes('sla_warning') && <WarningAmber fontSize="small" color="warning" />}
+            </Box>
+          )}
           {/* Agent Info Row */}
-          <Box display="flex" alignItems="center" mb={2}>
+          <Box display="flex" alignItems="center" mb={1}>
             {/* Avatar Icon */}
             <Person sx={{ mr: 1, color: 'text.secondary' }} />
             
             {/* Name & Code */}
             <Box flexGrow={1}>
-              <Typography variant="h6" noWrap>
+              <Typography variant="subtitle1" noWrap fontWeight={700}>
                 {agent.agentName}
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -68,14 +89,14 @@ function AgentCard({ agent, onSendMessage }) {
           </Box>
 
           {/* Current Status */}
-          <Box display="flex" alignItems="center" mb={2}>
+          <Box display="flex" alignItems="center" mb={1}>
             <StatusIcon sx={{ mr: 1, color: statusColor }} />
             <Chip
               label={agent.currentStatus}
               size="small"
               sx={{ 
-                backgroundColor: statusColor,
-                color: 'white',
+                backgroundColor: `${statusColor}22`,
+                color: statusColor,
                 fontWeight: 'bold'
               }}
             />
@@ -93,11 +114,11 @@ function AgentCard({ agent, onSendMessage }) {
           </Box>
 
           {/* Actions */}
-          <Box display="flex" justifyContent="space-between">
+          <Box display="flex" justifyContent="space-between" alignItems="center">
             <Button
               size="small"
               startIcon={<Message />}
-              onClick={() => setMessageDialog(true)}
+              onClick={(e) => { e.stopPropagation(); setMessageDialog(true); }}
               disabled={!agent.isOnline}
             >
               Message

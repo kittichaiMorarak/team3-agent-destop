@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import LoginForm from './components/LoginForm';
 import AgentInfo from './components/AgentInfo';
-import StatusPanel from './components/StatusPanel';
-import MessagePanel from './components/MessagePanel';
+import StatusDropdown from './components/StatusDropdown';
+import MessageCenter from './components/MessageCenter';
+import StatsWidget from './components/StatsWidget';
+import QuickActions from './components/QuickActions';
+import ScheduleWidget from './components/ScheduleWidget';
+import TipsWidget from './components/TipsWidget';
+import FloatingStatus from './components/FloatingStatus';
 import {
   setAuthToken,
   getMessages,
@@ -12,7 +17,8 @@ import {
 import {
   connectSocket,
   disconnectSocket,
-  sendStatusUpdate
+  sendStatusUpdate,
+  sendMessage as sendMessageSocket
 } from './services/socket';
 import {
   showDesktopNotification,
@@ -30,6 +36,9 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [error, setError] = useState(null);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusToast, setStatusToast] = useState('');
+  const [sending, setSending] = useState(false);
 
   // Refs to prevent stale closures
   const socketRef = useRef(null);
@@ -116,7 +125,13 @@ function App() {
 
       status_updated: (data) => {
         logger.log('Status updated:', data);
-        setStatus(data.status);
+        setStatus((prev) => {
+          if (prev !== data.status) {
+            setStatusToast(`Status changed to ${data.status}`);
+            setTimeout(() => setStatusToast(''), 2000);
+          }
+          return data.status;
+        });
       },
 
       status_error: (error) => {
@@ -285,6 +300,7 @@ function App() {
     // Optimistically update UI
     const previousStatus = status;
     setStatus(newStatus);
+    setUpdatingStatus(true);
 
     try {
       // Method 1: Try WebSocket first (real-time)
@@ -292,11 +308,15 @@ function App() {
 
       if (socketSuccess) {
         logger.log('Status update sent via WebSocket');
+        setStatusToast(`Status changed to ${newStatus}`);
+        setTimeout(() => setStatusToast(''), 2000);
       } else {
         // Method 2: Fallback to HTTP API
         logger.log('WebSocket not connected, using HTTP API fallback');
         await updateAgentStatus(agent.agentCode, newStatus);
         logger.log('Status updated via HTTP API');
+        setStatusToast(`Status changed to ${newStatus}`);
+        setTimeout(() => setStatusToast(''), 2000);
       }
     } catch (error) {
       logger.error('Status update failed:', error);
@@ -307,7 +327,7 @@ function App() {
 
       // Clear error after 3 seconds
       setTimeout(() => setError(null), 3000);
-    }
+    } finally { setUpdatingStatus(false); }
   }, [agent, status]);
 
   /**
@@ -316,6 +336,45 @@ function App() {
   const clearError = useCallback(() => {
     setError(null);
   }, []);
+
+  // Send message (Quick Compose)
+  const handleQuickSend = useCallback(async ({ toCode, content, priority = 'normal' }) => {
+    if (!agent || !toCode || !content) return;
+    try {
+      setSending(true);
+      const payload = { fromCode: agent.agentCode, toCode, content, type: 'direct', priority };
+      const ok = sendMessageSocket(payload);
+      if (!ok) {
+        const { sendMessageApi } = await import('./services/api');
+        await sendMessageApi(payload);
+      }
+      setStatusToast('Message sent');
+      setTimeout(() => setStatusToast(''), 2000);
+    } catch (e) {
+      console.error(e);
+      setError('Failed to send message');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setSending(false);
+    }
+  }, [agent]);
+
+  // Keyboard shortcuts for quick status
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const onKey = (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+        // Scroll to message center
+        const el = document.querySelector('#message-center');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+      if (e.key === 'F2') handleStatusChange('Available');
+      if (e.key === 'F3') handleStatusChange('Busy');
+      if (e.key === 'F4') handleStatusChange('Break');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isLoggedIn, handleStatusChange]);
 
   return (
     <div className="app">
@@ -345,27 +404,48 @@ function App() {
       ) : (
         <div className="dashboard">
           <div className="dashboard-header">
-            <AgentInfo agent={agent} status={status} />
-            <button
-              onClick={handleLogout}
-              className="logout-btn"
-              aria-label="Logout"
-            >
-              Logout
-            </button>
+            <div className="brand">
+              <div className="logo" aria-hidden="true"></div>
+              <div className="title">Agent Wallboard</div>
+            </div>
+            <div className="header-actions">
+              <StatusDropdown
+                currentStatus={status}
+                onChange={handleStatusChange}
+                disabled={connectionStatus !== 'connected'}
+                isUpdating={updatingStatus}
+              />
+              <div className="bell" title="Notifications">
+                🔔<span className="badge">{Math.max(0, messages.filter(m => !m.isRead).length)}</span>
+              </div>
+              <div className="avatar" title={agent?.agentName || 'Agent'}>{(agent?.agentName || 'A').slice(0,1)}</div>
+              <button
+                onClick={handleLogout}
+                className="logout-btn"
+                aria-label="Logout"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-
-          <StatusPanel
-            currentStatus={status}
-            onStatusChange={handleStatusChange}
-            disabled={connectionStatus !== 'connected'}
-          />
-
-          <MessagePanel
-            messages={messages}
-            agentCode={agent?.agentCode}
-            loading={loadingMessages}
-          />
+          <div className="dashboard-body">
+            <div className="left-col">
+              <StatsWidget callsToday={messages.filter(m=>m.type==='call_log').length || 12} target={45} avgHandle={'5m 32s'} csat={'4.8★'} />
+              <QuickActions />
+              <ScheduleWidget />
+              <TipsWidget />
+            </div>
+            <div className="right-col" id="message-center">
+              <MessageCenter
+                messages={messages}
+                agentCode={agent?.agentCode}
+                loading={loadingMessages || sending}
+                onSend={handleQuickSend}
+              />
+            </div>
+          </div>
+          <FloatingStatus status={status} />
+          {statusToast && <div className="toast" role="status" aria-live="polite">{statusToast}</div>}
         </div>
       )}
     </div>

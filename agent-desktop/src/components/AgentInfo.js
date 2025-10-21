@@ -4,13 +4,13 @@ function AgentInfo({ agent, status }) {
   if (!agent) return null;
 
   const getStatusColor = (status) => {
-    const colors = {
-      Available: '#4CAF50',
-      Busy: '#FF9800',
-      Break: '#2196F3',
-      Offline: '#9E9E9E'
+    const map = {
+      Available: 'var(--status-available)',
+      Busy: 'var(--status-busy)',
+      Break: 'var(--status-break)',
+      Offline: 'var(--status-offline)'
     };
-    return colors[status] || colors.Offline;
+    return map[status] || map.Offline;
   };
 
   return (

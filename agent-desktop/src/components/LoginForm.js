@@ -7,9 +7,12 @@ function LoginForm({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [serverStatus, setServerStatus] = useState('unknown');
+  const [remember, setRemember] = useState(true);
 
   useEffect(() => {
     checkHealth();
+    const remembered = localStorage.getItem('agentCode');
+    if (remembered) setAgentCode(remembered);
   }, []);
 
   const checkHealth = async () => {
@@ -38,6 +41,11 @@ function LoginForm({ onLogin }) {
       const result = await loginAgent(agentCode.toUpperCase());
       
       if (result.success) {
+        if (remember) {
+          localStorage.setItem('agentCode', agentCode.toUpperCase());
+        } else {
+          localStorage.removeItem('agentCode');
+        }
         onLogin(result.data.user, result.data.token);
       } else {
         setError(result.error || 'Login failed');
@@ -90,6 +98,10 @@ function LoginForm({ onLogin }) {
               maxLength={5}
               autoFocus
             />
+          </div>
+          <div className="form-group" style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <input id="remember" type="checkbox" checked={remember} onChange={(e)=>setRemember(e.target.checked)} />
+            <label htmlFor="remember">Remember me</label>
           </div>
           
           <button 

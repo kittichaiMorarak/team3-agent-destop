@@ -1,0 +1,85 @@
+:root {
+  /* Status Colors - Semantic */
+  --status-available: #10B981; /* Green */
+  --status-busy: #F59E0B;      /* Orange */
+  --status-break: #3B82F6;     /* Blue */
+  --status-offline: #6B7280;   /* Gray */
+
+  /* Background variants (10% opacity) */
+  --status-available-bg: rgba(16, 185, 129, 0.1);
+  --status-busy-bg: rgba(245, 158, 11, 0.1);
+  --status-break-bg: rgba(59, 130, 246, 0.1);
+  --status-offline-bg: rgba(107, 114, 128, 0.1);
+
+  /* UI Colors - Primary Actions */
+  --primary-600: #2563EB;
+  --primary-700: #1D4ED8;
+  --primary-50: #EFF6FF;
+
+  /* UI Colors - Feedback */
+  --success-600: #16A34A;
+  --warning-600: #EA580C;
+  --error-600: #DC2626;
+  --info-600: #0284C7;
+
+  /* Neutral Colors - Structure */
+  --gray-50: #F9FAFB;
+  --gray-100: #F3F4F6;
+  --gray-200: #E5E7EB;
+  --gray-300: #D1D5DB;
+  --gray-500: #6B7280;
+  --gray-700: #374151;
+  --gray-900: #111827;
+
+  /* Typography */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  /* Spacing (8px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Specials */
+  --white: #ffffff;
+  --black: #000000;
+}
+
+/* Focus ring (WCAG 2.1 AA) */
+:focus-visible {
+  outline: 2px solid var(--primary-600);
+  outline-offset: 2px;
+}
+
+/* Utility: status colors as classes */
+.u-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.u-status-available { background: var(--status-available); }
+.u-status-busy { background: var(--status-busy); }
+.u-status-break { background: var(--status-break); }
+.u-status-offline { background: var(--status-offline); }
+

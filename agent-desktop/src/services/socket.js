@@ -88,3 +88,18 @@ export const isSocketConnected = () => {
 };
 
 export const getSocket = () => socket;
+
+/**
+ * Send message via WebSocket (direct or broadcast)
+ * @param {{fromCode:string,toCode?:string,toTeamId?:number,content:string,type:'direct'|'broadcast',priority?:string}} payload
+ * @returns {boolean} whether emit was attempted
+ */
+export const sendMessage = (payload) => {
+  if (socket && socket.connected) {
+    console.log('Sending message via WebSocket:', payload);
+    socket.emit('send_message', payload);
+    return true;
+  }
+  console.warn('Socket not connected, cannot send message');
+  return false;
+};

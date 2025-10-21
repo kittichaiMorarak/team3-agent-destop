@@ -183,3 +183,32 @@ export const checkServerHealth = async () => {
     throw error;
   }
 };
+
+/**
+ * Send a message using HTTP API (fallback when socket not available)
+ */
+export const sendMessageApi = async ({ fromCode, toCode, toTeamId, content, type = 'direct', priority = 'normal' }) => {
+  try {
+    if (!authToken) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/messages/send`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
+      body: JSON.stringify({ fromCode, toCode, toTeamId, content, type, priority })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send message');
+    }
+    return data;
+  } catch (error) {
+    console.error('Send Message API Error:', error);
+    throw error;
+  }
+};
